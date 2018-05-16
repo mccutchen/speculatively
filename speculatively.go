@@ -13,7 +13,10 @@ import (
 type Thunk func(context.Context) (interface{}, error)
 
 // Do speculatively executes a Thunk one or more times in parallel, waiting for
-// the given patience duration between subsequent executions
+// the given patience duration between subsequent executions.
+//
+// Note that for Do to respect context deadlines/timeouts, the given Thunk must
+// respect them.
 func Do(ctx context.Context, patience time.Duration, thunk Thunk) (interface{}, error) {
 	out := make(chan result)
 	done := make(chan struct{})

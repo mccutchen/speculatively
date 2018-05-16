@@ -1,5 +1,5 @@
 test: *.go
-	go test -race .
+	go test -count=1 -race .
 
 testcover: *.go
 	go test -cover .
