@@ -1,7 +1,26 @@
 # speculatively
 
 Package `speculatively` provides a simple mechanism to speculatively execute a
-task in parallel only after some initial timeout has elapsed.
+task in parallel only after some initial timeout has elapsed:
+
+```go
+// An example task that will wait for a random amount of time before returning
+task := func(ctx context.Context) (interface{}, error) {
+    delay := time.Duration(float64(250*time.Millisecond) * rand.Float64())
+    select {
+    case <-time.After(delay):
+        return "success", nil
+    case <-ctx.Done():
+        return "timeout", ctx.Err()
+    }
+}
+
+ctx, cancel := context.WithTimeout(context.Background(), 50*time.Millisecond)
+defer cancel()
+
+// If task doesn't return within 20ms, it will be executed again in parallel
+result, err := speculatively.Do(ctx, 20*time.Millisecond, task)
+```
 
 This was inspired by the ["Defeat your 99th percentile with speculative task"
 blog post][1], which describes it nicely:
