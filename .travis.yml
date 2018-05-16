@@ -1,0 +1,12 @@
+---
+language: go
+go:
+ - 1.8
+ - 1.9
+ - 1.10
+ - tip
+script: make testci
+before_install:
+  - go get -u golang.org/x/lint/golint
+notifications:
+  email: false

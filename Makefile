@@ -1,8 +1,12 @@
 test: *.go
-	go test .
+	go test -race .
 
 testcover: *.go
 	go test -cover .
 
-testrace: *.go
-	go test -race .
+lint: *.go
+	gofmt -l -e -d .
+	go vet .
+	golint -set_exit_status .
+
+testci: lint test

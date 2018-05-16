@@ -1,5 +1,9 @@
 # speculatively
 
+[![GoDoc](https://godoc.org/github.com/mccutchen/speculatively?status.svg)](https://godoc.org/github.com/mccutchen/speculatively)
+[![Build Status](https://travis-ci.org/mccutchen/speculatively.svg?branch=master)](http://travis-ci.org/mccutchen/speculatively)
+[![Coverage](http://gocover.io/_badge/github.com/mccutchen/speculatively?0)](http://gocover.io/github.com/mccutchen/speculatively)
+
 Package `speculatively` provides a simple mechanism to speculatively execute a
 task in parallel only after some initial timeout has elapsed:
 
