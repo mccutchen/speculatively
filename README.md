@@ -1,6 +1,6 @@
 # speculatively
 
-[![GoDoc](https://godoc.org/github.com/mccutchen/speculatively?status.svg)](https://godoc.org/github.com/mccutchen/speculatively)
+[![GoDoc](https://godoc.org/github.com/mccutchen/speculatively?status.svg)](https://pkg.go.dev/github.com/mccutchen/speculatively)
 [![Build Status](https://travis-ci.org/mccutchen/speculatively.svg?branch=master)](http://travis-ci.org/mccutchen/speculatively)
 [![Coverage](http://gocover.io/_badge/github.com/mccutchen/speculatively?0)](http://gocover.io/github.com/mccutchen/speculatively)
 
@@ -48,6 +48,6 @@ function in [Go Concurrency Patterns: Timing out, moving on][3], but they a)
 have no knowledge of different replicas and b) wait for a caller-controlled
 timeout before launching additional tasks.
 
-[1]: https://bjankie1.github.io/blog/
+[1]: https://archive.is/QDqM3
 [2]: http://www-inst.eecs.berkeley.edu/~cs252/sp17/papers/TheTailAtScale.pdf
 [3]: https://blog.golang.org/go-concurrency-patterns-timing-out-and
