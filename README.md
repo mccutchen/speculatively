@@ -1,8 +1,9 @@
 # speculatively
 
-[![GoDoc](https://godoc.org/github.com/mccutchen/speculatively?status.svg)](https://pkg.go.dev/github.com/mccutchen/speculatively)
-[![Build Status](https://travis-ci.org/mccutchen/speculatively.svg?branch=master)](http://travis-ci.org/mccutchen/speculatively)
-[![Coverage](http://gocover.io/_badge/github.com/mccutchen/speculatively?0)](http://gocover.io/github.com/mccutchen/speculatively)
+[![Documentation](https://pkg.go.dev/badge/github.com/mccutchen/speculatively)](https://pkg.go.dev/github.com/mccutchen/speculatively)
+[![Build status](https://github.com/mccutchen/speculatively/actions/workflows/test.yaml/badge.svg)](https://github.com/mccutchen/speculatively/actions/workflows/test.yaml)
+[![Code coverage](https://codecov.io/gh/mccutchen/speculatively/branch/main/graph/badge.svg)](https://codecov.io/gh/mccutchen/speculatively)
+[![Go report card](http://goreportcard.com/badge/github.com/mccutchen/speculatively)](https://goreportcard.com/report/github.com/mccutchen/speculatively)
 
 Package `speculatively` provides a simple mechanism to speculatively execute a
 task in parallel only after some initial timeout has elapsed:
