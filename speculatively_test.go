@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"sync"
+	"sync/atomic"
 	"testing"
 	"time"
 )
@@ -53,6 +54,8 @@ func newSimpleTestThunk(val interface{}, err error, delay time.Duration) *testTh
 }
 
 func TestSingleThunk(t *testing.T) {
+	t.Parallel()
+
 	thunk := newSimpleTestThunk(1, nil, 5*time.Millisecond)
 	patience := 20 * time.Millisecond
 
@@ -70,6 +73,8 @@ func TestSingleThunk(t *testing.T) {
 }
 
 func TestSpeculativeThunkStarted(t *testing.T) {
+	t.Parallel()
+
 	thunk := newSimpleTestThunk(1, nil, 75*time.Millisecond)
 
 	timeout := 125 * time.Millisecond
@@ -91,6 +96,8 @@ func TestSpeculativeThunkStarted(t *testing.T) {
 }
 
 func TestSpeculativeThunkFinishesFirst(t *testing.T) {
+	t.Parallel()
+
 	results := []result{
 		{val: 1, err: nil},
 		{val: 2, err: nil},
@@ -125,8 +132,9 @@ func TestSpeculativeThunkFinishesFirst(t *testing.T) {
 }
 
 func TestSpeculativeErrors(t *testing.T) {
-
 	t.Run("first task finishes first with error", func(t *testing.T) {
+		t.Parallel()
+
 		results := []result{
 			{val: 1, err: errors.New("error")},
 			{val: 2, err: nil},
@@ -152,8 +160,10 @@ func TestSpeculativeErrors(t *testing.T) {
 	})
 
 	t.Run("first task finishes second with error", func(t *testing.T) {
+		t.Parallel()
+
 		results := []result{
-			{val: 1, err: errors.New("error")},
+			{val: 0, err: errors.New("error")},
 			{val: 2, err: nil},
 		}
 		delays := []time.Duration{
@@ -162,8 +172,8 @@ func TestSpeculativeErrors(t *testing.T) {
 		}
 		thunk := newTestThunk(results, delays)
 
-		timeout := 50 * time.Millisecond
-		patience := 10 * time.Millisecond
+		patience := 20 * time.Millisecond
+		timeout := 100 * time.Millisecond
 
 		// The first thunk will take too long, so we expect the second value to be
 		// returned
@@ -185,6 +195,8 @@ func TestSpeculativeErrors(t *testing.T) {
 }
 
 func TestContextPropagated(t *testing.T) {
+	t.Parallel()
+
 	thunk := newSimpleTestThunk(1, nil, 10*time.Second)
 
 	timeout := 25 * time.Millisecond
@@ -199,5 +211,60 @@ func TestContextPropagated(t *testing.T) {
 	}
 	if callCount := thunk.callCount(); callCount != 2 {
 		t.Errorf("expected Thunk to run %d times, got %d", 2, callCount)
+	}
+}
+
+func TestCompletionCancelsOutstandingThunks(t *testing.T) {
+	t.Parallel()
+
+	var (
+		timeout     = 75 * time.Millisecond
+		duration    = 50 * time.Millisecond
+		patience    = 20 * time.Millisecond
+		callCount   int64
+		cancelCount int64
+	)
+
+	ctx, cancel := context.WithTimeout(context.Background(), timeout)
+	defer cancel()
+
+	var wg sync.WaitGroup
+	result, err := Do(ctx, patience, func(ctx context.Context) (interface{}, error) {
+		wg.Add(1)
+		defer wg.Done()
+
+		inflight := atomic.AddInt64(&callCount, 1)
+		t.Logf("testThunk: starting call %d", inflight)
+		select {
+		case <-ctx.Done():
+			t.Logf("testThunk: call %d canceled", inflight)
+			if ctx.Err() != context.Canceled {
+				t.Fatalf("unexpected context error in thunk %d: %s", inflight, ctx.Err())
+			}
+			atomic.AddInt64(&cancelCount, 1)
+			return nil, ctx.Err()
+		case <-time.After(duration):
+			return 42, nil
+		}
+	})
+
+	wg.Wait()
+
+	if err != nil {
+		t.Fatalf("unexpected error: %s", err)
+	}
+	val, ok := result.(int)
+	if !ok {
+		t.Fatalf("unexpected result type: %#v", result)
+	}
+	if val != 42 {
+		t.Fatalf("unexpected result value: %d != 42", val)
+	}
+
+	if callCount != 3 {
+		t.Fatalf("unexpected call count: %d", callCount)
+	}
+	if cancelCount != callCount-1 {
+		t.Fatalf("unexpected cancel count: %d != %d", cancelCount, callCount-1)
 	}
 }
