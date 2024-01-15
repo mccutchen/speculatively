@@ -10,18 +10,18 @@ import (
 )
 
 // Thunk is a computation to be speculatively executed
-type Thunk func(context.Context) (interface{}, error)
+type Thunk[T any] func(context.Context) (T, error)
 
 // Do speculatively executes a Thunk one or more times in parallel, waiting for
 // the given patience duration between subsequent executions.
 //
 // Note that for Do to respect context cancelations, the given Thunk must
 // respect them.
-func Do(ctx context.Context, patience time.Duration, thunk Thunk) (interface{}, error) {
+func Do[T any](ctx context.Context, patience time.Duration, thunk Thunk[T]) (T, error) {
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
-	out := make(chan result)
+	out := make(chan result[T])
 	go runThunk(ctx, thunk, out)
 
 	ticker := time.NewTicker(patience)
@@ -32,20 +32,21 @@ func Do(ctx context.Context, patience time.Duration, thunk Thunk) (interface{}, 
 		case r := <-out:
 			return r.val, r.err
 		case <-ctx.Done():
-			return nil, ctx.Err()
+			var zero T
+			return zero, ctx.Err()
 		case <-ticker.C:
 			go runThunk(ctx, thunk, out)
 		}
 	}
 }
 
-type result struct {
-	val interface{}
+type result[T any] struct {
+	val T
 	err error
 }
 
-func runThunk(ctx context.Context, thunk Thunk, out chan result) {
-	var r result
+func runThunk[T any](ctx context.Context, thunk Thunk[T], out chan result[T]) {
+	var r result[T]
 	r.val, r.err = thunk(ctx)
 	select {
 	case out <- r:
