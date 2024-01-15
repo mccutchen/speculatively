@@ -10,7 +10,7 @@ import (
 )
 
 type testThunk struct {
-	results []result
+	results []result[int]
 	delays  []time.Duration
 	count   int
 	mu      sync.Mutex
@@ -22,7 +22,7 @@ func (t *testThunk) callCount() int {
 	return t.count
 }
 
-func (t *testThunk) call(ctx context.Context) (interface{}, error) {
+func (t *testThunk) call(ctx context.Context) (int, error) {
 	t.mu.Lock()
 	id := t.count
 	d := t.delays[id%len(t.delays)]
@@ -34,19 +34,19 @@ func (t *testThunk) call(ctx context.Context) (interface{}, error) {
 	case <-time.After(d):
 		return r.val, r.err
 	case <-ctx.Done():
-		return nil, ctx.Err()
+		return 0, ctx.Err()
 	}
 }
 
-func newTestThunk(results []result, delays []time.Duration) *testThunk {
+func newTestThunk(results []result[int], delays []time.Duration) *testThunk {
 	return &testThunk{
 		results: results,
 		delays:  delays,
 	}
 }
 
-func newSimpleTestThunk(val interface{}, err error, delay time.Duration) *testThunk {
-	results := []result{
+func newSimpleTestThunk(val int, err error, delay time.Duration) *testThunk {
+	results := []result[int]{
 		{val: val, err: err},
 	}
 	delays := []time.Duration{delay}
@@ -59,11 +59,10 @@ func TestSingleThunk(t *testing.T) {
 	thunk := newSimpleTestThunk(1, nil, 5*time.Millisecond)
 	patience := 20 * time.Millisecond
 
-	result, err := Do(context.Background(), patience, thunk.call)
+	val, err := Do(context.Background(), patience, thunk.call)
 	if err != nil {
 		t.Errorf("unexpected error: %s", err)
 	}
-	val := result.(int)
 	if val != 1 {
 		t.Errorf("expected val = %d, got %d", 1, val)
 	}
@@ -82,11 +81,10 @@ func TestSpeculativeThunkStarted(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), timeout)
 	defer cancel()
 
-	result, err := Do(ctx, patience, thunk.call)
+	val, err := Do(ctx, patience, thunk.call)
 	if err != nil {
 		t.Fatalf("unexpected error: %s", err)
 	}
-	val := result.(int)
 	if val != 1 {
 		t.Errorf("expected val = %d, got %d", 1, val)
 	}
@@ -98,7 +96,7 @@ func TestSpeculativeThunkStarted(t *testing.T) {
 func TestSpeculativeThunkFinishesFirst(t *testing.T) {
 	t.Parallel()
 
-	results := []result{
+	results := []result[int]{
 		{val: 1, err: nil},
 		{val: 2, err: nil},
 	}
@@ -118,11 +116,10 @@ func TestSpeculativeThunkFinishesFirst(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), timeout)
 	defer cancel()
 
-	result, err := Do(ctx, patience, thunk.call)
+	val, err := Do(ctx, patience, thunk.call)
 	if err != nil {
 		t.Fatalf("unexpected error: %s", err)
 	}
-	val := result.(int)
 	if val != expectedValue {
 		t.Errorf("expected val = %d, got %d", expectedValue, val)
 	}
@@ -135,7 +132,7 @@ func TestSpeculativeErrors(t *testing.T) {
 	t.Run("first task finishes first with error", func(t *testing.T) {
 		t.Parallel()
 
-		results := []result{
+		results := []result[int]{
 			{val: 1, err: errors.New("error")},
 			{val: 2, err: nil},
 		}
@@ -162,7 +159,7 @@ func TestSpeculativeErrors(t *testing.T) {
 	t.Run("first task finishes second with error", func(t *testing.T) {
 		t.Parallel()
 
-		results := []result{
+		results := []result[int]{
 			{val: 0, err: errors.New("error")},
 			{val: 2, err: nil},
 		}
@@ -182,12 +179,10 @@ func TestSpeculativeErrors(t *testing.T) {
 		ctx, cancel := context.WithTimeout(context.Background(), timeout)
 		defer cancel()
 
-		result, err := Do(ctx, patience, thunk.call)
+		val, err := Do(ctx, patience, thunk.call)
 		if err != nil {
 			t.Fatalf("unexpected error: %q", err)
 		}
-
-		val := result.(int)
 		if val != expectedVal {
 			t.Errorf("expected val = %#v, got %#v", expectedVal, val)
 		}

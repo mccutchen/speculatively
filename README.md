@@ -10,7 +10,7 @@ task in parallel only after some initial timeout has elapsed:
 
 ```go
 // An example task that will wait for a random amount of time before returning
-task := func(ctx context.Context) (interface{}, error) {
+task := func(ctx context.Context) (string, error) {
     delay := time.Duration(float64(250*time.Millisecond) * rand.Float64())
     select {
     case <-time.After(delay):
