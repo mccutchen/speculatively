@@ -3,10 +3,10 @@ COVERAGE_PATH ?= coverage.out
 COVERAGE_ARGS ?= -covermode=atomic -coverprofile=$(COVERAGE_PATH)
 TEST_ARGS     ?= -race $(COVERAGE_ARGS)
 
-# Tool dependencies
-TOOL_BIN_DIR     ?= $(shell go env GOPATH)/bin
-TOOL_GOLINT      := $(TOOL_BIN_DIR)/golint
-TOOL_STATICCHECK := $(TOOL_BIN_DIR)/staticcheck
+# 3rd party tools
+LINT        := go run github.com/mgechev/revive@v1.3.4
+REFLEX      := go run github.com/cespare/reflex@v0.3.1
+STATICCHECK := go run honnef.co/go/tools/cmd/staticcheck@2023.1.3
 
 test:
 	go test $(TEST_ARGS) ./...
@@ -23,19 +23,13 @@ testcover: testci
 	go tool cover -html=$(COVERAGE_PATH)
 .PHONY: testcover
 
-lint: $(TOOL_GOLINT) $(TOOL_STATICCHECK)
+lint:
 	test -z "$$(gofmt -d -s -e .)" || (echo "Error: gofmt failed"; gofmt -d -s -e . ; exit 1)
 	go vet ./...
-	$(TOOL_GOLINT) -set_exit_status ./...
-	$(TOOL_STATICCHECK) ./...
+	$(LINT) -set_exit_status ./...
+	$(STATICCHECK) ./...
 .PHONY: lint
 
 clean:
 	rm -rf $(COVERAGE_PATH)
 .PHONY: clean
-
-$(TOOL_GOLINT):
-	cd /tmp && go get -u golang.org/x/lint/golint
-
-$(TOOL_STATICCHECK):
-	cd /tmp && go get -u honnef.co/go/tools/cmd/staticcheck
