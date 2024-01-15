@@ -15,28 +15,28 @@ type Thunk func(context.Context) (interface{}, error)
 // Do speculatively executes a Thunk one or more times in parallel, waiting for
 // the given patience duration between subsequent executions.
 //
-// Note that for Do to respect context deadlines/timeouts, the given Thunk must
+// Note that for Do to respect context cancelations, the given Thunk must
 // respect them.
 func Do(ctx context.Context, patience time.Duration, thunk Thunk) (interface{}, error) {
+	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
+
 	out := make(chan result)
-	done := make(chan struct{})
-	defer close(done)
+	go runThunk(ctx, thunk, out)
 
-	go runThunk(ctx, thunk, out, done)
+	ticker := time.NewTicker(patience)
+	defer ticker.Stop()
 
-	go func() {
-		for {
-			select {
-			case <-time.After(patience):
-				go runThunk(ctx, thunk, out, done)
-			case <-done:
-				return
-			}
+	for step := 1; ; step++ {
+		select {
+		case r := <-out:
+			return r.val, r.err
+		case <-ctx.Done():
+			return nil, ctx.Err()
+		case <-ticker.C:
+			go runThunk(ctx, thunk, out)
 		}
-	}()
-
-	r := <-out
-	return r.val, r.err
+	}
 }
 
 type result struct {
@@ -44,10 +44,9 @@ type result struct {
 	err error
 }
 
-func runThunk(ctx context.Context, thunk Thunk, out chan result, done chan struct{}) {
+func runThunk(ctx context.Context, thunk Thunk, out chan result) {
 	var r result
 	r.val, r.err = thunk(ctx)
-
 	select {
 	case out <- r:
 	default:

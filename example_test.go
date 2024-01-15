@@ -53,12 +53,11 @@ func (t *ExpensiveTask) Execute(ctx context.Context) (int, error) {
 //
 // The overall timings of each execution look like this:
 //
-//     call 0:    0s wait + 256ms latency = 256ms overall
-//     call 1:  20ms wait + 128ms latency = 148ms overall
-//     call 2:  40ms wait +  64ms latency = 104ms overall
-//     call 3:  60ms wait +  32ms latency =  92ms overall <-- winner
-//     call 4:  80ms wait +  16ms latency =  96ms overall
-//
+//	call 0:    0s wait + 256ms latency = 256ms overall
+//	call 1:  20ms wait + 128ms latency = 148ms overall
+//	call 2:  40ms wait +  64ms latency = 104ms overall
+//	call 3:  60ms wait +  32ms latency =  92ms overall <-- winner
+//	call 4:  80ms wait +  16ms latency =  96ms overall
 func Example() {
 	var (
 		timeout        = 100 * time.Millisecond
