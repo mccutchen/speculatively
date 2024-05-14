@@ -73,7 +73,7 @@ func Example() {
 	ctx, cancel := context.WithTimeout(context.Background(), timeout)
 	defer cancel()
 
-	successfulCall, err := speculatively.Do(ctx, patience, func(ctx context.Context) (interface{}, error) {
+	successfulCall, err := speculatively.Do(ctx, patience, func(ctx context.Context) (int, error) {
 		return expensiveTask.Execute(ctx)
 	})
 	if err != nil {
