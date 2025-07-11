@@ -4,9 +4,9 @@ COVERAGE_ARGS ?= -covermode=atomic -coverprofile=$(COVERAGE_PATH)
 TEST_ARGS     ?= -race $(COVERAGE_ARGS)
 
 # 3rd party tools
-LINT        := go run github.com/mgechev/revive@v1.3.4
+LINT        := go run github.com/mgechev/revive@v1.10.0
 REFLEX      := go run github.com/cespare/reflex@v0.3.1
-STATICCHECK := go run honnef.co/go/tools/cmd/staticcheck@2023.1.3
+STATICCHECK := go run honnef.co/go/tools/cmd/staticcheck@2025.1.1
 
 test:
 	go test $(TEST_ARGS) ./...
