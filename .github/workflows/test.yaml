@@ -14,9 +14,8 @@ jobs:
     strategy:
       matrix:
         go-version:
-        - '1.21'
-        - '1.20'
-        - '1.19'
+        - stable
+        - oldstable
 
     steps:
     - name: setup
@@ -34,4 +33,4 @@ jobs:
       uses: codecov/codecov-action@18283e04ce6e62d37312384ff67231eb8fd56d24 # v5.4.3
       with:
         files: ./coverage.out
-      if: ${{ matrix.go-version == '1.21' }}
+      if: ${{ matrix.go-version == 'stable' }}
